@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thai Food Roulette</title>
+  <style>
+    :root { --ink:#41233c; --pink:#ff5b86; --orange:#ff9e3d; --yellow:#ffe66d; --mint:#63d7c4; --card:rgba(255,255,255,.9); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); font-family:ui-rounded, "Nunito", system-ui, sans-serif; background:linear-gradient(135deg,#ff9a8b 0%,#ff6a88 38%,#9b6bd3 100%); overflow-x:hidden; }
+    body::before, body::after { content:""; position:fixed; z-index:-1; border-radius:50%; filter:blur(2px); opacity:.42; }
+    body::before { width:300px; height:300px; background:var(--yellow); top:-110px; right:-90px; }
+    body::after { width:250px; height:250px; background:var(--mint); bottom:-100px; left:-90px; }
+    main { width:min(940px, calc(100% - 32px)); margin:auto; padding:42px 0 54px; }
+    header { text-align:center; color:white; text-shadow:0 2px 0 rgba(86,25,65,.18); margin-bottom:25px; }
+    h1 { font-size:clamp(2.25rem,8vw,4.7rem); margin:0; letter-spacing:-.06em; line-height:.95; }
+    header p { font-size:clamp(1rem,2.4vw,1.25rem); margin:13px 0 0; font-weight:700; }
+    .layout { display:grid; grid-template-columns:1.3fr .7fr; gap:22px; align-items:start; }
+    .card { background:var(--card); backdrop-filter:blur(12px); border:2px solid rgba(255,255,255,.6); box-shadow:0 16px 35px rgba(87,28,74,.2); border-radius:30px; }
+    .roulette { min-height:465px; padding:26px; display:flex; flex-direction:column; justify-content:space-between; text-align:center; }
+    .dish { min-height:290px; display:grid; place-items:center; align-content:center; }
+    .emoji { font-size:clamp(5.7rem,17vw,9rem); line-height:1; filter:drop-shadow(0 8px 5px rgba(72,29,57,.16)); animation:float 3s ease-in-out infinite; }
+    .dish h2 { font-size:clamp(1.7rem,4vw,2.55rem); margin:17px 0 5px; letter-spacing:-.04em; }
+    .english { color:#e34c76; font-size:1.12rem; font-weight:800; margin:0; }
+    .description { max-width:370px; margin:11px auto 0; line-height:1.45; font-weight:600; }
+    .placeholder { color:#805574; font-size:1.16rem; font-weight:800; }
+    .pick { border:0; border-radius:18px; padding:17px 25px; color:white; font:800 clamp(1.1rem,3vw,1.35rem)/1 ui-rounded,system-ui,sans-serif; cursor:pointer; background:linear-gradient(135deg,var(--pink),#ed3c69); box-shadow:0 7px 0 #bc2f53, 0 12px 18px rgba(205,49,90,.25); transition:transform .18s, box-shadow .18s, filter .18s; }
+    .pick:hover { filter:brightness(1.06); transform:translateY(-2px); box-shadow:0 9px 0 #bc2f53,0 15px 20px rgba(205,49,90,.24); }
+    .pick:active { transform:translateY(5px); box-shadow:0 2px 0 #bc2f53; }
+    .pick:disabled { cursor:wait; filter:saturate(.65); transform:translateY(4px); box-shadow:0 3px 0 #bc2f53; }
+    .history { padding:25px; }
+    .history h2 { margin:0 0 14px; font-size:1.45rem; }
+    #historyList { padding:0; margin:0; list-style:none; display:grid; gap:9px; }
+    #historyList li { display:flex; align-items:center; gap:10px; background:#fff6cf; border-radius:14px; padding:10px; font-weight:800; animation:slideIn .35s ease both; }
+    #historyList li span { font-size:1.55rem; }
+    .empty { color:#805574; background:transparent!important; font-weight:650!important; padding:4px 0!important; }
+    .spinning .emoji { animation:spin .55s linear infinite; }
+    .spinning .dish { animation:shake .12s linear infinite; }
+    @keyframes float { 50% { transform:translateY(-8px) rotate(3deg); } }
+    @keyframes spin { to { transform:rotate(360deg) scale(.88); } }
+    @keyframes shake { 50% { transform:translateX(5px); } }
+    @keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+    @media (max-width:700px) { main { padding-top:30px; } .layout { grid-template-columns:1fr; } .roulette { min-height:430px; } .history { padding:22px; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header><h1>Thai Food Roulette</h1><p>Your next delicious Thai adventure starts here! 🌶️</p></header>
+    <section class="layout">
+      <article class="card roulette" id="roulette">
+        <div class="dish" id="dish" aria-live="polite"><div class="emoji">🍜</div><p class="placeholder">Feeling hungry? Let fate choose!</p></div>
+        <button class="pick" id="pickButton">Pick my meal! 🎲</button>
+      </article>
+      <aside class="card history"><h2>🧾 Your History</h2><ul id="historyList"><li class="empty">No picks yet — spin the wheel!</li></ul></aside>
+    </section>
+  </main>
+  <script>
+    const dishes = [
+      ['🍜','ผัดไทย','Pad Thai','Stir-fried rice noodles with a tangy, sweet-savoury sauce.'],
+      ['🦐','ต้มยำกุ้ง','Tom Yum Goong','A hot and sour lemongrass soup packed with juicy prawns.'],
+      ['🥗','ส้มตำ','Som Tam','Crisp green papaya salad with a bright spicy-lime kick.'],
+      ['🍛','แกงเขียวหวาน','Green Curry','Creamy coconut curry, fragrant herbs, and a lively green heat.'],
+      ['🍳','ข้าวผัด','Khao Pad','Comforting Thai fried rice with egg, vegetables, and lime.'],
+      ['🥭','ข้าวเหนียวมะม่วง','Mango Sticky Rice','Sweet ripe mango with coconut sticky rice — a sunny classic.'],
+      ['🍲','มัสมั่นไก่','Massaman Curry','Mild, rich curry with tender chicken, potato, and roasted peanuts.'],
+      ['🍗','ไก่ทอดหาดใหญ่','Hat Yai Fried Chicken','Crispy southern Thai fried chicken with fragrant fried shallots.'],
+      ['🍝','ผัดซีอิ๊ว','Pad See Ew','Chewy wide noodles, Chinese broccoli, and smoky dark soy.'],
+      ['🍚','ข้าวมันไก่','Khao Man Gai','Poached chicken and aromatic rice with a punchy dipping sauce.'],
+      ['🥘','พะแนง','Panang Curry','A thick, creamy curry with kaffir lime and a gentle peanut richness.'],
+      ['🐟','ปลาทอดน้ำปลา','Pla Tod Nam Pla','Crispy fish drizzled with a savoury, sweet fish sauce glaze.'],
+      ['🌿','ลาบหมู','Larb Moo','Zesty minced pork salad with toasted rice and fresh herbs.'],
+      ['🍢','หมูสะเต๊ะ','Moo Satay','Grilled pork skewers served with creamy peanut sauce and relish.'],
+      ['🦀','ปูผัดผงกะหรี่','Poo Pad Pong Karee','Stir-fried crab in a velvety yellow curry sauce.'],
+      ['🍜','ก๋วยเตี๋ยวเรือ','Boat Noodles','Deeply savoury noodle soup with herbs, spice, and rich broth.']
+    ];
+    const dish = document.getElementById('dish'), button = document.getElementById('pickButton'), roulette = document.getElementById('roulette'), historyList = document.getElementById('historyList');
+    let history = [], lastIndex = -1;
+    function renderHistory() {
+      historyList.innerHTML = history.length ? history.map(item => `<li><span>${item[0]}</span><div>${item[1]}<br><small>${item[2]}</small></div></li>`).join('') : '<li class="empty">No picks yet — spin the wheel!</li>';
+    }
+    function showDish(item) { dish.innerHTML = `<div class="emoji">${item[0]}</div><h2>${item[1]}</h2><p class="english">${item[2]}</p><p class="description">${item[3]}</p>`; }
+    button.addEventListener('click', () => {
+      button.disabled = true; button.textContent = 'Cooking up a choice…'; roulette.classList.add('spinning');
+      dish.innerHTML = '<div class="emoji">🎰</div><p class="placeholder">Stirring the spicy possibilities…</p>';
+      setTimeout(() => {
+        let index; do { index = Math.floor(Math.random() * dishes.length); } while (index === lastIndex && dishes.length > 1);
+        lastIndex = index; const chosen = dishes[index]; showDish(chosen); history.unshift(chosen); history = history.slice(0,5); renderHistory();
+        roulette.classList.remove('spinning'); button.disabled = false; button.textContent = 'Pick my meal! 🎲';
+      }, 1050);
+    });
+  </script>
+</body>
+</html>
